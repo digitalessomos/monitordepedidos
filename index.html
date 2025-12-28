@@ -16,9 +16,26 @@
         .column-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; padding: 24px; border-radius: 16px; width: 95%; max-width: 1100px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        .card-draggable { cursor: grab; user-select: none; }
+        
+        .card-draggable { cursor: grab; user-select: none; touch-action: none; position: relative; }
+        .card-draggable:active { cursor: grabbing; }
         .drop-zone-active { border: 2px dashed #6366f1 !important; background-color: #f5f3ff !important; transform: scale(1.01); }
-        #drag-ghost { position: fixed; pointer-events: none; z-index: 9999; display: none; }
+        
+        #drag-ghost { 
+            position: fixed; 
+            pointer-events: none; 
+            z-index: 9999; 
+            display: none; 
+            opacity: 0.9;
+            transform: scale(0.9);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 2px solid #6366f1;
+            width: 200px;
+        }
+
         .num-btn { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 8px; transition: all 0.2s; border: 1px solid #e2e8f0; background: white; cursor: pointer; }
         .num-btn-delivered { background-color: #10b981 !important; color: white !important; border-color: #059669 !important; }
         .num-btn-active { background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
@@ -29,7 +46,6 @@
 <body class="p-4 md:p-8">
     <div id="drag-ghost"></div>
 
-    <!-- Alerta Flotante -->
     <div id="custom-alert" class="bg-white border-l-4 border-indigo-500 p-4 shadow-2xl rounded-r-lg flex items-center gap-3">
         <i class="fas fa-info-circle text-indigo-500"></i>
         <p id="alert-msg" class="text-sm font-semibold text-slate-700"></p>
@@ -43,7 +59,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">LOGÍSTICA TOTAL</h1>
-                    <p class="text-slate-500 text-sm font-medium">Panel de Control de Flota en Tiempo Real</p>
+                    <p class="text-slate-500 text-sm font-medium">Panel de Control de Flota PRO</p>
                 </div>
             </div>
             
@@ -52,16 +68,15 @@
                     <i class="fas fa-power-off"></i> <span>Activar Terminal</span>
                 </button>
                 <button id="open-staff-modal-btn" class="px-5 py-3 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:border-indigo-300 transition flex items-center gap-2">
-                    <i class="fas fa-id-card text-indigo-500"></i> Repartidores
+                    <i class="fas fa-id-card text-indigo-500"></i> Personal
                 </button>
                 <button id="open-history-modal-btn" class="px-5 py-3 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:border-indigo-300 transition flex items-center gap-2">
-                    <i class="fas fa-chart-pie text-indigo-500"></i> Auditoría & PDF
+                    <i class="fas fa-chart-line text-indigo-500"></i> Reportes PDF
                 </button>
                 <button id="reset-demo-btn" class="p-3 text-slate-300 hover:text-red-500 transition"><i class="fas fa-sync"></i></button>
             </div>
         </header>
 
-        <!-- Sección Slider -->
         <div id="ops-panel" class="hidden mb-8">
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
@@ -78,17 +93,15 @@
             </div>
         </div>
 
-        <!-- Kanban Principal -->
         <main id="kanban-container" class="hidden">
             <div id="orders-kanban" class="flex gap-6 overflow-x-auto pb-8 snap-x">
-                <!-- Columna Centralizadora de Tickets Nuevos -->
                 <div class="flex flex-col flex-shrink-0 w-80 snap-start">
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-xs font-black text-indigo-500 uppercase tracking-tighter">Buzón de Entrada</span>
                         <span id="count-unassigned" class="bg-indigo-100 text-indigo-600 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
                     </div>
                     <div class="mb-4 flex gap-2">
-                        <input type="number" id="input-unassigned" placeholder="Nuevo Ticket #" class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
+                        <input type="number" id="input-unassigned" placeholder="Ticket #" class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
                         <button onclick="quickAdd('')" class="bg-indigo-600 text-white px-5 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"><i class="fas fa-plus"></i></button>
                     </div>
                     <div id="col-unassigned" data-repartidor="" class="kanban-col flex flex-col gap-3 min-h-[500px] p-4 bg-slate-100/50 rounded-2xl border-2 border-dashed border-slate-200 overflow-y-auto column-scroll"></div>
@@ -105,7 +118,7 @@
                 <button id="close-staff-modal-btn" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
             <div class="flex gap-2 mb-6">
-                <input type="text" id="new-staff-name" placeholder="Nombre completo" class="w-full p-3 border rounded-xl text-sm font-bold">
+                <input type="text" id="new-staff-name" placeholder="Nombre" class="w-full p-3 border rounded-xl text-sm font-bold">
                 <button id="add-staff-btn" class="bg-indigo-600 text-white px-4 rounded-xl"><i class="fas fa-user-plus"></i></button>
             </div>
             <div id="staff-list" class="space-y-2"></div>
@@ -115,37 +128,34 @@
     <div id="historyModal" class="modal">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-slate-900">Auditoría de Operaciones</h2>
+                <h2 class="text-2xl font-black text-slate-900">Auditoría & Análisis</h2>
                 <button id="close-history-modal-btn" class="text-slate-400 text-2xl">&times;</button>
             </div>
-            
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="staff-stats-badges"></div>
-
             <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="bg-white border-b text-slate-400 font-bold">
                             <th class="px-6 py-4 uppercase text-[10px]">Identificador</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Repartidor Asignado</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Estado Actual</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Registro Hora</th>
+                            <th class="px-6 py-4 uppercase text-[10px]">Repartidor</th>
+                            <th class="px-6 py-4 uppercase text-[10px]">Estado</th>
+                            <th class="px-6 py-4 uppercase text-[10px]">Hora Registro</th>
                         </tr>
                     </thead>
                     <tbody id="history-table-body" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
-
             <div class="mt-8 flex flex-wrap justify-end gap-3">
                 <button id="download-pdf-btn" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-xs flex items-center gap-3 hover:bg-indigo-600 transition shadow-xl">
-                    <i class="fas fa-file-pdf"></i> GENERAR REPORTE GERENCIAL
+                    <i class="fas fa-file-pdf"></i> GENERAR REPORTE PDF
                 </button>
-                <button id="clear-history-modal-btn" class="bg-red-50 text-red-500 px-6 py-3 rounded-xl font-bold text-xs">VACIAR DATOS</button>
+                <button id="clear-history-modal-btn" class="bg-red-50 text-red-500 px-6 py-3 rounded-xl font-bold text-xs">VACIAR HISTORIAL</button>
             </div>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'logistica_pro_db';
+        const STORAGE_KEY = 'logistica_pro_db_v3';
         const APP_STATE_KEY = 'logistica_pro_active';
         const STAFF_KEY = 'logistica_pro_staff';
         const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
@@ -154,7 +164,11 @@
         let currentSlide = 0;
         let synth;
 
-        // DB Helpers
+        // Variables para Drag & Drop Táctil
+        let touchActiveCard = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
         const getDB = () => JSON.parse(localStorage.getItem(STORAGE_KEY)) || { orders: {} };
         const saveDB = (db) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); renderKanban(); updateSliderUI(); };
 
@@ -171,7 +185,6 @@
             setTimeout(() => { el.style.display = 'none'; }, 3000);
         }
 
-        // Slider
         function initSlider() {
             const track = document.getElementById('slider-track');
             track.innerHTML = '';
@@ -216,8 +229,7 @@
         function createOrder(n) {
             const db = getDB();
             if (db.orders[n]) {
-                showAlert(`Ticket #${n} ya está en uso.`);
-                playSound("C2");
+                showAlert(`Ticket #${n} ya está en curso.`);
                 return;
             }
             db.orders[n] = { id: n, repartidor: null, status: 'nuevo', time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), timestamp: Date.now() };
@@ -228,7 +240,7 @@
         function replaceOrder(n) {
             const db = getDB();
             if (db.orders[n]?.status === 'entregado') {
-                if (confirm(`¿Reemplazar ticket entregado #${n}? Se eliminará del historial.`)) {
+                if (confirm(`¿Reiniciar ticket #${n}?`)) {
                     delete db.orders[n];
                     saveDB(db);
                     createOrder(n);
@@ -236,7 +248,6 @@
             }
         }
 
-        // Kanban logic
         function assign(id, rep) {
             const db = getDB();
             if (db.orders[id]) {
@@ -254,6 +265,7 @@
                 db.orders[id].status = 'entregado';
                 saveDB(db);
                 playSound("C5");
+                showAlert(`Pedido #${id} Entregado`);
             }
         }
 
@@ -261,6 +273,62 @@
             const input = document.getElementById(rep ? `input-${rep}` : 'input-unassigned');
             const val = input.value.trim();
             if (val) { createOrder(val); if (rep) assign(val, rep); input.value = ''; }
+        }
+
+        // Sistema de Drag & Drop Táctil
+        function handleTouchStart(e, orderId) {
+            touchActiveCard = orderId;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            
+            const ghost = document.getElementById('drag-ghost');
+            ghost.innerHTML = `<span class="font-black">Pedido #${orderId}</span>`;
+            ghost.style.display = 'block';
+            ghost.style.left = `${touch.clientX - 100}px`;
+            ghost.style.top = `${touch.clientY - 30}px`;
+        }
+
+        function handleTouchMove(e) {
+            if (!touchActiveCard) return;
+            const touch = e.touches[0];
+            const ghost = document.getElementById('drag-ghost');
+            ghost.style.left = `${touch.clientX - 100}px`;
+            ghost.style.top = `${touch.clientY - 30}px`;
+
+            // Detectar si estamos sobre una columna
+            document.querySelectorAll('.kanban-col').forEach(col => {
+                const rect = col.getBoundingClientRect();
+                if (touch.clientX > rect.left && touch.clientX < rect.right &&
+                    touch.clientY > rect.top && touch.clientY < rect.bottom) {
+                    col.classList.add('drop-zone-active');
+                } else {
+                    col.classList.remove('drop-zone-active');
+                }
+            });
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchActiveCard) return;
+            const ghost = document.getElementById('drag-ghost');
+            ghost.style.display = 'none';
+
+            let assignedRep = null;
+            document.querySelectorAll('.kanban-col').forEach(col => {
+                const rect = col.getBoundingClientRect();
+                const lastTouch = e.changedTouches[0];
+                if (lastTouch.clientX > rect.left && lastTouch.clientX < rect.right &&
+                    lastTouch.clientY > rect.top && lastTouch.clientY < rect.bottom) {
+                    assignedRep = col.dataset.repartidor;
+                }
+                col.classList.remove('drop-zone-active');
+            });
+
+            if (assignedRep !== null) {
+                assign(touchActiveCard, assignedRep || null);
+            }
+
+            touchActiveCard = null;
         }
 
         function renderKanban() {
@@ -274,24 +342,32 @@
                 const card = document.createElement('div');
                 card.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-200 card-draggable flex flex-col gap-3";
                 card.draggable = true;
+                card.dataset.id = o.id;
                 card.innerHTML = `
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center pointer-events-none">
                         <span class="text-lg font-black text-slate-800">#${o.id}</span>
                         <span class="text-[9px] font-black px-2 py-1 rounded bg-slate-100 text-slate-500 uppercase">${o.time}</span>
                     </div>
                     <div class="flex gap-2">
                         ${o.repartidor ? 
-                            `<button onclick="finalize('${o.id}')" class="flex-1 bg-indigo-600 text-white text-[10px] font-black py-2 rounded-lg uppercase tracking-widest">Entregado</button>` :
+                            `<button onclick="finalize('${o.id}')" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg uppercase tracking-widest shadow-lg shadow-emerald-100">Finalizar</button>` :
                             `<select onchange="assign('${o.id}', this.value)" class="flex-1 text-[10px] bg-slate-50 border-none rounded-lg p-2 font-bold outline-none">
-                                <option value="">Asignar...</option>
-                                ${repartidores.map(r => `<option value="${r}">${r}</option>`).join('')}
+                                <option value=\"\">Asignar...</option>
+                                ${repartidores.map(r => `<option value=\"${r}\">${r}</option>`).join('')}
                             </select>`
                         }
-                        <button onclick="if(confirm('¿Borrar?')) { const db=getDB(); delete db.orders['${o.id}']; saveDB(db); }" class="text-slate-300 hover:text-red-500 transition px-2"><i class="fas fa-trash-alt text-xs"></i></button>
+                        <button onclick=\"if(confirm('¿Borrar?')) { const db=getDB(); delete db.orders['${o.id}']; saveDB(db); }\" class=\"text-slate-300 hover:text-red-500 transition px-2\"><i class=\"fas fa-trash-alt text-xs\"></i></button>
                     </div>
                 `;
+                
+                // Eventos Mouse
                 card.ondragstart = (e) => e.dataTransfer.setData('id', o.id);
                 
+                // Eventos Touch (Soporte Móvil)
+                card.ontouchstart = (e) => handleTouchStart(e, o.id);
+                card.ontouchmove = (e) => { e.preventDefault(); handleTouchMove(e); };
+                card.ontouchend = (e) => handleTouchEnd(e);
+
                 if (!o.repartidor) {
                     document.getElementById('col-unassigned').appendChild(card);
                     countNew++;
@@ -312,120 +388,114 @@
                 const col = document.createElement('div');
                 col.className = "flex flex-col flex-shrink-0 w-80 snap-start rep-col";
                 col.innerHTML = `
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs font-black uppercase tracking-tighter" style="color: ${color}">${r}</span>
+                    <div class=\"flex justify-between items-center mb-4\">
+                        <span class=\"text-xs font-black uppercase tracking-tighter\" style=\"color: ${color}\">${r}</span>
                     </div>
-                    <div class="mb-4 flex gap-2">
-                        <input type="number" id="input-${r}" placeholder="Vincular a ${r}..." class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 outline-none shadow-sm">
-                        <button onclick="quickAdd('${r}')" class="text-white px-5 rounded-xl transition shadow-lg" style="background-color: ${color}"><i class="fas fa-plus"></i></button>
+                    <div class=\"mb-4 flex gap-2\">
+                        <input type=\"number\" id=\"input-${r}\" placeholder=\"Vincular ticket...\" class=\"w-full text-sm font-bold p-3 rounded-xl border border-slate-200 outline-none shadow-sm\">
+                        <button onclick=\"quickAdd('${r}')\" class=\"text-white px-5 rounded-xl transition shadow-lg\" style=\"background-color: ${color}\"><i class=\"fas fa-plus\"></i></button>
                     </div>
-                    <div id="col-${safeName}" data-repartidor="${r}" class="kanban-col flex flex-col gap-3 min-h-[500px] p-4 rounded-2xl border-2 border-transparent transition-all overflow-y-auto column-scroll" style="background-color: ${color}10"></div>
+                    <div id=\"col-${safeName}\" data-repartidor=\"${r}\" class=\"kanban-col flex flex-col gap-3 min-h-[500px] p-4 rounded-2xl border-2 border-transparent transition-all overflow-y-auto column-scroll\" style=\"background-color: ${color}15\"></div>
                 `;
                 const dz = col.querySelector('.kanban-col');
+                
+                // Soporte Mouse para Drop
                 dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('drop-zone-active'); };
                 dz.ondragleave = () => dz.classList.remove('drop-zone-active');
                 dz.ondrop = (e) => { dz.classList.remove('drop-zone-active'); assign(e.dataTransfer.getData('id'), r); };
+                
                 container.appendChild(col);
             });
+
+            // Soporte Drop para la columna de entrada (desasignar)
+            const inputCol = document.getElementById('col-unassigned');
+            inputCol.ondragover = (e) => { e.preventDefault(); inputCol.classList.add('drop-zone-active'); };
+            inputCol.ondragleave = () => inputCol.classList.remove('drop-zone-active');
+            inputCol.ondrop = (e) => { inputCol.classList.remove('drop-zone-active'); assign(e.dataTransfer.getData('id'), ''); };
         }
 
-        // PDF Generation Logic
         document.getElementById('download-pdf-btn').onclick = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const db = getDB();
-            const orders = Object.values(db.orders);
-            const entregados = orders.filter(o => o.status === 'entregado');
+            const allOrders = Object.values(db.orders);
+            const entregados = allOrders.filter(o => o.status === 'entregado');
             
-            // Header con Rectángulo Potente
-            doc.setFillColor(30, 41, 59); // Slate 800
-            doc.rect(0, 0, 210, 50, 'F');
-            
+            doc.setFillColor(30, 41, 59);
+            doc.rect(0, 0, 210, 35, 'F');
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
+            doc.setFontSize(22);
             doc.setFont("helvetica", "bold");
-            doc.text("REPORTE OPERATIVO LOGÍSTICO", 20, 30);
-            doc.setFontSize(10);
-            doc.text(`FECHA DE EMISIÓN: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 20, 40);
-
-            // Resumen de entregas (Tabla Superior)
-            const staffResumen = repartidores.map(r => ({
-                name: r,
-                total: entregados.filter(o => o.repartidor === r).length
-            }));
+            doc.text("LOGÍSTICA TOTAL: REPORTE DE GESTIÓN", 15, 22);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Fecha: ${new Date().toLocaleString()}`, 15, 30);
+            doc.text(`Pedidos Totales: ${allOrders.length} | Entregas Completadas: ${entregados.length}`, 140, 30);
 
             doc.setTextColor(30, 41, 59);
             doc.setFontSize(14);
-            doc.text("RESUMEN DE PRODUCTIVIDAD POR REPARTIDOR", 20, 65);
+            doc.setFont("helvetica", "bold");
+            doc.text("Desempeño Individual del Personal", 15, 50);
 
-            doc.autoTable({
-                startY: 70,
-                head: [['REPARTIDOR', 'TOTAL ENTREGAS EXITOSAS', 'ESTADO']],
-                body: staffResumen.map(s => [s.name, s.total, 'ACTIVO']),
-                theme: 'striped',
-                headStyles: { fillColor: [79, 70, 229] }
-            });
+            const staffStats = repartidores.map((r, i) => ({
+                name: r,
+                count: entregados.filter(o => o.repartidor === r).length,
+                color: COLORS[i % COLORS.length]
+            }));
 
-            // GRÁFICO CIRCULAR (Vectorial)
-            let currentY = doc.lastAutoTable.finalY + 20;
-            doc.text("DISTRIBUCIÓN ESTRATÉGICA DE CARGA", 20, currentY);
+            let xPos = 15;
+            let yPos = 60;
             
-            const centerX = 140;
-            const centerY = currentY + 35;
-            const radius = 30;
-            let startAngle = 0;
-            const totalEntregas = entregados.length || 1;
-
-            staffResumen.forEach((s, i) => {
-                const percentage = s.total / totalEntregas;
-                const sliceAngle = percentage * 2 * Math.PI;
-                const color = COLORS[i % COLORS.length];
-                
-                // Convertir hex a RGB
-                const r = parseInt(color.slice(1, 3), 16);
-                const g = parseInt(color.slice(3, 5), 16);
-                const b = parseInt(color.slice(5, 7), 16);
+            staffStats.forEach((s, idx) => {
+                const r = parseInt(s.color.slice(1,3), 16);
+                const g = parseInt(s.color.slice(3,5), 16);
+                const b = parseInt(s.color.slice(5,7), 16);
                 
                 doc.setFillColor(r, g, b);
-                
-                if (percentage > 0) {
-                    // Dibujar porción (Aproximación por triángulos o segmentos)
-                    doc.setLineWidth(0.1);
-                    for(let a = 0; a < sliceAngle; a += 0.1) {
-                        const x1 = centerX + Math.cos(startAngle + a) * radius;
-                        const y1 = centerY + Math.sin(startAngle + a) * radius;
-                        const x2 = centerX + Math.cos(startAngle + a + 0.12) * radius;
-                        const y2 = centerY + Math.sin(startAngle + a + 0.12) * radius;
-                        doc.triangle(centerX, centerY, x1, y1, x2, y2, 'F');
-                    }
+                doc.rect(xPos, yPos, 43, 20, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.text(s.name.toUpperCase(), xPos + 4, yPos + 7);
+                doc.setFontSize(12);
+                doc.text(`${s.count} entregas`, xPos + 4, yPos + 15);
+
+                xPos += 46;
+                if ((idx + 1) % 4 === 0) {
+                    xPos = 15;
+                    yPos += 24;
                 }
-
-                // Leyenda del gráfico
-                doc.rect(20, currentY + 10 + (i * 10), 5, 5, 'F');
-                doc.setFontSize(9);
-                doc.text(`${s.name}: ${s.total} (${(percentage * 100).toFixed(1)}%)`, 28, currentY + 14 + (i * 10));
-
-                startAngle += sliceAngle;
             });
 
-            // Detalle de Auditoría
-            doc.addPage();
-            doc.text("AUDITORÍA DETALLADA DE TICKETS", 20, 20);
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Historial Detallado de Operaciones", 15, yPos + 30);
+
             doc.autoTable({
-                startY: 25,
-                head: [['TICKET', 'REPARTIDOR', 'HORA REGISTRO', 'ESTADO FINAL']],
-                body: orders.map(o => [`#${o.id}`, o.repartidor || 'S/A', o.time, o.status.toUpperCase()]),
-                headStyles: { fillColor: [30, 41, 59] }
+                startY: yPos + 35,
+                head: [['# ID', 'OPERADOR / REPARTIDOR', 'ESTADO ACTUAL', 'HORA REGISTRO']],
+                body: allOrders.sort((a,b) => b.timestamp - a.timestamp).map(o => [
+                    `Ticket #${o.id}`, 
+                    o.repartidor || 'Sin asignar', 
+                    o.status.toUpperCase(), 
+                    o.time
+                ]),
+                headStyles: { fillColor: [30, 41, 59], fontSize: 10, halign: 'left' },
+                bodyStyles: { fontSize: 9, cellPadding: 4 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: 15, right: 15 },
+                theme: 'striped'
             });
 
-            doc.save(`REPORTE_LOGISTICO_${Date.now()}.pdf`);
+            doc.save(`LOGISTICA_PRO_HISTORIAL_${Date.now()}.pdf`);
+            showAlert("Reporte PDF generado");
         };
 
-        // UI Events
+        // Event Listeners UI
         document.getElementById('start-demo-btn').onclick = () => {
             document.getElementById('ops-panel').classList.remove('hidden');
             document.getElementById('kanban-container').classList.remove('hidden');
-            document.getElementById('start-demo-btn').innerHTML = '<i class="fas fa-check-circle"></i> Terminal Conectada';
+            document.getElementById('start-demo-btn').innerHTML = '<i class=\"fas fa-check-circle\"></i> Consola Activa';
             document.getElementById('start-demo-btn').classList.replace('bg-indigo-600', 'bg-emerald-500');
             localStorage.setItem(APP_STATE_KEY, 'true');
             initSlider(); initCols(); renderKanban();
@@ -434,9 +504,9 @@
         document.getElementById('open-staff-modal-btn').onclick = () => {
             const list = document.getElementById('staff-list'); list.innerHTML = '';
             repartidores.forEach((n, i) => {
-                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span class="font-bold text-slate-700 text-sm">${n}</span>
-                    <button onclick="repartidores.splice(${i},1); localStorage.setItem(STAFF_KEY, JSON.stringify(repartidores)); initCols(); renderKanban(); document.getElementById('open-staff-modal-btn').click();" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                list.innerHTML += `<div class=\"flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200\">
+                    <span class=\"font-bold text-slate-700 text-sm\">${n}</span>
+                    <button onclick=\"repartidores.splice(${i},1); localStorage.setItem(STAFF_KEY, JSON.stringify(repartidores)); initCols(); renderKanban(); document.getElementById('open-staff-modal-btn').click();\" class=\"text-red-400 hover:text-red-600\"><i class=\"fas fa-trash\"></i></button>
                 </div>`;
             });
             document.getElementById('staffModal').style.display = 'flex';
@@ -457,11 +527,11 @@
             const orders = Object.values(db.orders);
             const badges = document.getElementById('staff-stats-badges');
             badges.innerHTML = '';
-            repartidores.forEach((r, i) => {
+            repartidores.forEach((r) => {
                 const count = orders.filter(o => o.repartidor === r && o.status === 'entregado').length;
-                badges.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">${r}</p>
-                    <p class="text-2xl font-black text-slate-900">${count} <span class="text-[10px] text-slate-300">pedidos</span></p>
+                badges.innerHTML += `<div class=\"bg-white p-4 rounded-2xl border border-slate-100 shadow-sm\">
+                    <p class=\"text-[9px] font-black text-slate-400 uppercase mb-1\">${r}</p>
+                    <p class=\"text-2xl font-black text-slate-900\">${count}</p>
                 </div>`;
             });
 
@@ -469,10 +539,10 @@
             tbody.innerHTML = '';
             orders.sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
                 tbody.innerHTML += `<tr>
-                    <td class="px-6 py-4 font-black">#${o.id}</td>
-                    <td class="px-6 py-4 font-bold text-slate-600">${o.repartidor || '--'}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-[10px] font-black uppercase ${o.status === 'entregado' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}">${o.status}</span></td>
-                    <td class="px-6 py-4 text-slate-400 text-xs">${o.time}</td>
+                    <td class=\"px-6 py-4 font-black\">#${o.id}</td>
+                    <td class=\"px-6 py-4 font-bold text-slate-600\">${o.repartidor || '--'}</td>
+                    <td class=\"px-6 py-4\"><span class=\"px-2 py-1 rounded-full text-[10px] font-black uppercase ${o.status === 'entregado' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}\">${o.status}</span></td>
+                    <td class=\"px-6 py-4 text-slate-400 text-xs\">${o.time}</td>
                 </tr>`;
             });
             document.getElementById('historyModal').style.display = 'flex';
@@ -480,7 +550,7 @@
 
         document.getElementById('close-history-modal-btn').onclick = () => document.getElementById('historyModal').style.display = 'none';
         document.getElementById('close-staff-modal-btn').onclick = () => document.getElementById('staffModal').style.display = 'none';
-        document.getElementById('clear-history-modal-btn').onclick = () => { if(confirm("¿Vaciar historial?")) { saveDB({orders:{}}); } };
+        document.getElementById('clear-history-modal-btn').onclick = () => { if(confirm("¿Vaciar historial?")) saveDB({orders:{}}); };
         document.getElementById('reset-demo-btn').onclick = () => { if(confirm("¿Desea borrar toda la configuración y datos?")) { localStorage.clear(); location.reload(); } };
 
         window.onload = () => { if (localStorage.getItem(APP_STATE_KEY) === 'true') document.getElementById('start-demo-btn').click(); };

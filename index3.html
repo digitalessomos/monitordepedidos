@@ -11,15 +11,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; touch-action: manipulation; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; touch-action: manipulation; overflow-x: hidden; }
         .column-scroll::-webkit-scrollbar { width: 4px; }
         .column-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; padding: 24px; border-radius: 16px; width: 95%; max-width: 1100px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
         
+        /* Drag & Drop Mobile */
         .card-draggable { cursor: grab; user-select: none; touch-action: none; position: relative; }
         .card-draggable:active { cursor: grabbing; }
-        .drop-zone-active { border: 2px dashed #6366f1 !important; background-color: #f5f3ff !important; transform: scale(1.01); }
+        .drop-zone-active { border: 2px dashed #6366f1 !important; background-color: rgba(99, 102, 241, 0.1) !important; transform: scale(1.02); }
         
         #drag-ghost { 
             position: fixed; 
@@ -27,19 +29,24 @@
             z-index: 9999; 
             display: none; 
             opacity: 0.9;
-            transform: scale(0.9);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #6366f1;
+            width: 180px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .num-btn { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 8px; transition: all 0.2s; border: 1px solid #e2e8f0; background: white; cursor: pointer; }
         .num-btn-delivered { background-color: #10b981 !important; color: white !important; border-color: #059669 !important; }
         .num-btn-active { background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+        
         #custom-alert { position: fixed; top: 20px; right: 20px; z-index: 10000; display: none; animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div id="drag-ghost" class="bg-white p-4 rounded-xl border-2 border-indigo-500 w-64 shadow-2xl"></div>
+    <div id="drag-ghost"></div>
 
     <div id="custom-alert" class="bg-white border-l-4 border-indigo-500 p-4 shadow-2xl rounded-r-lg flex items-center gap-3">
         <i class="fas fa-info-circle text-indigo-500"></i>
@@ -50,11 +57,11 @@
         <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
             <div class="flex items-center gap-4">
                 <div class="bg-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                    <i class="fas fa-shipping-fast fa-lg"></i>
+                    <i class="fas fa-truck-loading fa-lg"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">LOGÍSTICA TOTAL</h1>
-                    <p class="text-slate-500 text-sm font-medium">Panel de Control de Flota PRO</p>
+                    <p class="text-slate-500 text-sm font-medium">Panel de Despacho Profesional</p>
                 </div>
             </div>
             
@@ -63,19 +70,19 @@
                     <i class="fas fa-power-off"></i> <span>Activar Terminal</span>
                 </button>
                 <button id="open-staff-modal-btn" class="px-5 py-3 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:border-indigo-300 transition flex items-center gap-2">
-                    <i class="fas fa-id-card text-indigo-500"></i> Personal
+                    <i class="fas fa-users text-indigo-500"></i> Repartidores
                 </button>
                 <button id="open-history-modal-btn" class="px-5 py-3 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:border-indigo-300 transition flex items-center gap-2">
-                    <i class="fas fa-chart-line text-indigo-500"></i> Reportes PDF
+                    <i class="fas fa-clipboard-list text-indigo-500"></i> Reportes
                 </button>
-                <button id="reset-demo-btn" class="p-3 text-slate-300 hover:text-red-500 transition"><i class="fas fa-sync"></i></button>
+                <button id="reset-demo-btn" class="p-3 text-slate-300 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i></button>
             </div>
         </header>
 
         <div id="ops-panel" class="hidden mb-8">
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                    <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest">Selector de Pedidos</h2>
+                    <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest">Selector de Tickets</h2>
                     <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
                         <button onclick="slideNumbers(-1)" class="w-8 h-8 flex items-center justify-center hover:bg-white rounded shadow-sm transition text-slate-600"><i class="fas fa-chevron-left"></i></button>
                         <span id="page-indicator" class="text-xs font-bold px-3 text-slate-500">Bloque 1</span>
@@ -91,13 +98,13 @@
         <main id="kanban-container" class="hidden">
             <div id="orders-kanban" class="flex gap-6 overflow-x-auto pb-8 snap-x">
                 <div class="flex flex-col flex-shrink-0 w-80 snap-start">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs font-black text-indigo-500 uppercase tracking-tighter">Buzón de Entrada</span>
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <span class="text-xs font-black text-indigo-500 uppercase">Sin Asignar</span>
                         <span id="count-unassigned" class="bg-indigo-100 text-indigo-600 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
                     </div>
                     <div class="mb-4 flex gap-2">
-                        <input type="number" id="input-unassigned" placeholder="Ticket #" class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
-                        <button onclick="quickAdd('')" class="bg-indigo-600 text-white px-5 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"><i class="fas fa-plus"></i></button>
+                        <input type="number" id="input-unassigned" placeholder="Ticket #" class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 outline-none shadow-sm focus:ring-2 ring-indigo-100 transition-all">
+                        <button onclick="quickAdd('')" class="bg-indigo-600 text-white px-5 rounded-xl hover:bg-indigo-700 transition shadow-lg"><i class="fas fa-plus"></i></button>
                     </div>
                     <div id="col-unassigned" data-repartidor="" class="kanban-col flex flex-col gap-3 min-h-[500px] p-4 bg-slate-100/50 rounded-2xl border-2 border-dashed border-slate-200 overflow-y-auto column-scroll"></div>
                 </div>
@@ -105,16 +112,16 @@
         </main>
     </div>
 
-    <!-- Modals -->
+    <!-- Modales -->
     <div id="staffModal" class="modal">
         <div class="modal-content max-w-sm">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-black text-slate-900">Personal de Flota</h2>
+                <h2 class="text-xl font-black text-slate-900">Personal</h2>
                 <button id="close-staff-modal-btn" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
             <div class="flex gap-2 mb-6">
-                <input type="text" id="new-staff-name" placeholder="Nombre" class="w-full p-3 border rounded-xl text-sm font-bold">
-                <button id="add-staff-btn" class="bg-indigo-600 text-white px-4 rounded-xl"><i class="fas fa-user-plus"></i></button>
+                <input type="text" id="new-staff-name" placeholder="Nombre..." class="w-full p-3 border rounded-xl text-sm font-bold outline-none focus:border-indigo-500">
+                <button id="add-staff-btn" class="bg-indigo-600 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
             </div>
             <div id="staff-list" class="space-y-2"></div>
         </div>
@@ -122,42 +129,66 @@
 
     <div id="historyModal" class="modal">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-slate-900">Auditoría & Análisis</h2>
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">Historial & Reportes</h2>
+                    <p class="text-slate-500 text-sm font-medium">Consolidado operativo de la sesión</p>
+                </div>
                 <button id="close-history-modal-btn" class="text-slate-400 text-2xl">&times;</button>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="staff-stats-badges"></div>
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead>
-                        <tr class="bg-white border-b text-slate-400 font-bold">
-                            <th class="px-6 py-4 uppercase text-[10px]">Identificador</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Repartidor</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Estado</th>
-                            <th class="px-6 py-4 uppercase text-[10px]">Hora Registro</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body" class="divide-y divide-slate-100"></tbody>
-                </table>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-slate-900 p-6 rounded-2xl text-white">
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-1">Total Pedidos</p>
+                    <p id="stat-total-orders" class="text-4xl font-black">0</p>
+                </div>
+                <div id="staff-performance-labels" class="md:col-span-3 flex flex-wrap gap-2">
+                    <!-- Dinámico: Etiquetas de productividad -->
+                </div>
             </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div class="max-h-[350px] overflow-y-auto column-scroll">
+                    <table class="w-full text-left text-sm">
+                        <thead class="sticky top-0 bg-slate-50 border-b border-slate-100">
+                            <tr class="text-slate-400 font-bold">
+                                <th class="px-6 py-4 uppercase text-[10px]">ID Ticket</th>
+                                <th class="px-6 py-4 uppercase text-[10px]">Repartidor</th>
+                                <th class="px-6 py-4 uppercase text-[10px]">Estado</th>
+                                <th class="px-6 py-4 uppercase text-[10px]">Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="mt-8 flex flex-wrap justify-end gap-3">
-                <button id="download-pdf-btn" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-xs flex items-center gap-3 hover:bg-indigo-600 transition shadow-xl">
-                    <i class="fas fa-file-pdf"></i> GENERAR REPORTE PDF
+                <button id="download-pdf-btn" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black text-xs flex items-center gap-3 hover:bg-indigo-700 transition shadow-xl">
+                    <i class="fas fa-file-pdf fa-lg"></i> GENERAR REPORTE COMPLETO
                 </button>
-                <button id="clear-history-modal-btn" class="bg-red-50 text-red-500 px-6 py-3 rounded-xl font-bold text-xs">VACIAR HISTORIAL</button>
+                <button id="clear-history-modal-btn" class="bg-red-50 text-red-500 px-6 py-4 rounded-xl font-bold text-xs hover:bg-red-100 transition">BORRAR DATOS</button>
             </div>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'logistica_pro_db_v3';
-        const APP_STATE_KEY = 'logistica_pro_active';
-        const STAFF_KEY = 'logistica_pro_staff';
-        const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+        const STORAGE_KEY = 'logistica_db_v6';
+        const APP_STATE_KEY = 'logistica_active_v6';
+        const STAFF_KEY = 'logistica_staff_v6';
+        const COLORS = [
+            { bg: '#6366f1', rgb: [99, 102, 241] },
+            { bg: '#10b981', rgb: [16, 185, 129] },
+            { bg: '#f59e0b', rgb: [245, 158, 11] },
+            { bg: '#ef4444', rgb: [239, 68, 68] },
+            { bg: '#8b5cf6', rgb: [139, 92, 246] },
+            { bg: '#06b6d4', rgb: [6, 182, 212] }
+        ];
 
-        let repartidores = JSON.parse(localStorage.getItem(STAFF_KEY)) || ['Carlos M.', 'Ana R.', 'Mateo G.', 'Lucía F.'];
+        let repartidores = JSON.parse(localStorage.getItem(STAFF_KEY)) || ['Carlos M.', 'Ana R.', 'Mateo G.'];
         let currentSlide = 0;
         let synth;
+        let touchActiveCard = null;
 
         const getDB = () => JSON.parse(localStorage.getItem(STORAGE_KEY)) || { orders: {} };
         const saveDB = (db) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); renderKanban(); updateSliderUI(); };
@@ -172,7 +203,7 @@
             const el = document.getElementById('custom-alert');
             document.getElementById('alert-msg').textContent = msg;
             el.style.display = 'flex';
-            setTimeout(() => { el.style.display = 'none'; }, 3000);
+            setTimeout(() => { el.style.display = 'none'; }, 2500);
         }
 
         function initSlider() {
@@ -184,11 +215,9 @@
                 for (let i = 1; i <= 20; i++) {
                     const n = p * 20 + i;
                     const b = document.createElement('button');
-                    b.id = `btn-num-${n}`;
                     b.className = 'num-btn';
                     b.textContent = n;
                     b.onclick = () => createOrder(n);
-                    b.ondblclick = () => replaceOrder(n);
                     grid.appendChild(b);
                 }
                 track.appendChild(grid);
@@ -218,31 +247,17 @@
 
         function createOrder(n) {
             const db = getDB();
-            if (db.orders[n]) {
-                showAlert(`Ticket #${n} ya está en curso.`);
-                return;
-            }
+            if (db.orders[n]) { showAlert(`Error: Ticket #${n} ya existe`); return; }
             db.orders[n] = { id: n, repartidor: null, status: 'nuevo', time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), timestamp: Date.now() };
             saveDB(db);
             playSound("E4");
-        }
-
-        function replaceOrder(n) {
-            const db = getDB();
-            if (db.orders[n]?.status === 'entregado') {
-                if (confirm(`¿Reiniciar ticket #${n}?`)) {
-                    delete db.orders[n];
-                    saveDB(db);
-                    createOrder(n);
-                }
-            }
         }
 
         function assign(id, rep) {
             const db = getDB();
             if (db.orders[id]) {
                 db.orders[id].repartidor = rep || null;
-                db.orders[id].status = rep ? 'camino' : 'nuevo';
+                db.orders[id].status = rep ? 'en camino' : 'nuevo';
                 db.orders[id].timestamp = Date.now();
                 saveDB(db);
                 playSound("G4");
@@ -255,7 +270,6 @@
                 db.orders[id].status = 'entregado';
                 saveDB(db);
                 playSound("C5");
-                showAlert(`Pedido #${id} Entregado`);
             }
         }
 
@@ -265,159 +279,248 @@
             if (val) { createOrder(val); if (rep) assign(val, rep); input.value = ''; }
         }
 
+        // TÁCTIL: Arrastre optimizado para móviles
+        function handleTouchStart(e, orderId) {
+            touchActiveCard = orderId;
+            const touch = e.touches[0];
+            const ghost = document.getElementById('drag-ghost');
+            ghost.innerHTML = `<div class="font-black text-indigo-600 text-sm">Ticket #${orderId}</div>`;
+            ghost.style.display = 'block';
+            ghost.style.left = `${touch.clientX - 90}px`;
+            ghost.style.top = `${touch.clientY - 40}px`;
+            playSound("F3");
+        }
+
+        function handleTouchMove(e) {
+            if (!touchActiveCard) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const ghost = document.getElementById('drag-ghost');
+            ghost.style.left = `${touch.clientX - 90}px`;
+            ghost.style.top = `${touch.clientY - 40}px`;
+
+            // Buscar columna bajo el dedo (con tolerancia)
+            const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+            const col = elUnder ? elUnder.closest('.kanban-col') : null;
+            
+            document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drop-zone-active'));
+            if (col) col.classList.add('drop-zone-active');
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchActiveCard) return;
+            const touch = e.changedTouches[0];
+            document.getElementById('drag-ghost').style.display = 'none';
+            
+            const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+            const col = elUnder ? elUnder.closest('.kanban-col') : null;
+            
+            if (col) assign(touchActiveCard, col.dataset.repartidor || null);
+            
+            document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drop-zone-active'));
+            touchActiveCard = null;
+        }
+
         function renderKanban() {
             const db = getDB();
             const active = Object.values(db.orders).filter(o => o.status !== 'entregado');
-            
             document.querySelectorAll('.kanban-col').forEach(c => c.innerHTML = '');
-            let countNew = 0;
-
+            
             active.forEach(o => {
                 const card = document.createElement('div');
                 card.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-200 card-draggable flex flex-col gap-3";
                 card.draggable = true;
-                card.dataset.id = o.id;
                 card.innerHTML = `
                     <div class="flex justify-between items-center pointer-events-none">
                         <span class="text-lg font-black text-slate-800">#${o.id}</span>
-                        <span class="text-[9px] font-black px-2 py-1 rounded bg-slate-100 text-slate-500 uppercase">${o.time}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase">${o.time}</span>
                     </div>
                     <div class="flex gap-2">
                         ${o.repartidor ? 
-                            `<button onclick="finalize('${o.id}')" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg uppercase tracking-widest shadow-lg shadow-emerald-100">Finalizar</button>` :
-                            `<select onchange="assign('${o.id}', this.value)" class="flex-1 text-[10px] bg-slate-50 border-none rounded-lg p-2 font-bold outline-none">
-                                <option value=\"\">Asignar...</option>
-                                ${repartidores.map(r => `<option value=\"${r}\">${r}</option>`).join('')}
+                            `<button onclick="finalize('${o.id}')" class="flex-1 bg-emerald-600 text-white text-[10px] font-black py-2.5 rounded-lg uppercase shadow-md">Finalizar</button>` :
+                            `<select onchange="assign('${o.id}', this.value)" class="flex-1 text-[10px] bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold outline-none">
+                                <option value="">Asignar...</option>
+                                ${repartidores.map(r => `<option value="${r}">${r}</option>`).join('')}
                             </select>`
                         }
-                        <button onclick=\"if(confirm('¿Borrar?')) { const db=getDB(); delete db.orders['${o.id}']; saveDB(db); }\" class=\"text-slate-300 hover:text-red-500 transition px-2\"><i class=\"fas fa-trash-alt text-xs\"></i></button>
                     </div>
                 `;
                 
                 card.ondragstart = (e) => e.dataTransfer.setData('id', o.id);
-                if (!o.repartidor) {
-                    document.getElementById('col-unassigned').appendChild(card);
-                    countNew++;
-                } else {
+                card.ontouchstart = (e) => handleTouchStart(e, o.id);
+                card.ontouchmove = (e) => handleTouchMove(e);
+                card.ontouchend = (e) => handleTouchEnd(e);
+                
+                if (!o.repartidor) document.getElementById('col-unassigned').appendChild(card);
+                else {
                     const col = document.getElementById(`col-${o.repartidor.replace(/\s/g, '')}`);
                     if (col) col.appendChild(card);
                 }
             });
-            document.getElementById('count-unassigned').textContent = countNew;
+            document.getElementById('count-unassigned').textContent = active.filter(o => !o.repartidor).length;
         }
 
         function initCols() {
             const container = document.getElementById('orders-kanban');
             container.querySelectorAll('.rep-col').forEach(e => e.remove());
+            
             repartidores.forEach((r, idx) => {
-                const color = COLORS[idx % COLORS.length];
-                const safeName = r.replace(/\s/g, '');
+                const colorObj = COLORS[idx % COLORS.length];
                 const col = document.createElement('div');
                 col.className = "flex flex-col flex-shrink-0 w-80 snap-start rep-col";
                 col.innerHTML = `
-                    <div class=\"flex justify-between items-center mb-4\">
-                        <span class=\"text-xs font-black uppercase tracking-tighter\" style=\"color: ${color}\">${r}</span>
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <span class="text-xs font-black uppercase tracking-widest" style="color: ${colorObj.bg}">${r}</span>
                     </div>
-                    <div class=\"mb-4 flex gap-2\">
-                        <input type=\"number\" id=\"input-${r}\" placeholder=\"Vincular ticket...\" class=\"w-full text-sm font-bold p-3 rounded-xl border border-slate-200 outline-none shadow-sm\">
-                        <button onclick=\"quickAdd('${r}')\" class=\"text-white px-5 rounded-xl transition shadow-lg\" style=\"background-color: ${color}\"><i class=\"fas fa-plus\"></i></button>
+                    <div class="mb-4 flex gap-2">
+                        <input type="number" id="input-${r}" placeholder="Asignar #" class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 outline-none shadow-sm focus:ring-2 ring-indigo-50 transition-all">
+                        <button onclick="quickAdd('${r}')" class="text-white px-5 rounded-xl transition shadow-lg" style="background-color: ${colorObj.bg}"><i class="fas fa-plus"></i></button>
                     </div>
-                    <div id=\"col-${safeName}\" data-repartidor=\"${r}\" class=\"kanban-col flex flex-col gap-3 min-h-[500px] p-4 rounded-2xl border-2 border-transparent transition-all overflow-y-auto column-scroll\" style=\"background-color: ${color}15\"></div>
+                    <div id="col-${r.replace(/\s/g, '')}" data-repartidor="${r}" class="kanban-col flex flex-col gap-3 min-h-[500px] p-4 rounded-2xl border-2 border-transparent transition-all overflow-y-auto column-scroll" style="background-color: ${colorObj.bg}10"></div>
                 `;
+                
                 const dz = col.querySelector('.kanban-col');
                 dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('drop-zone-active'); };
                 dz.ondragleave = () => dz.classList.remove('drop-zone-active');
                 dz.ondrop = (e) => { dz.classList.remove('drop-zone-active'); assign(e.dataTransfer.getData('id'), r); };
                 container.appendChild(col);
             });
+            
+            const inputCol = document.getElementById('col-unassigned');
+            inputCol.ondragover = (e) => { e.preventDefault(); inputCol.classList.add('drop-zone-active'); };
+            inputCol.ondrop = (e) => { inputCol.classList.remove('drop-zone-active'); assign(e.dataTransfer.getData('id'), ''); };
         }
 
+        // REPORTE PDF COMPLETO
         document.getElementById('download-pdf-btn').onclick = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const db = getDB();
             const allOrders = Object.values(db.orders);
-            const entregados = allOrders.filter(o => o.status === 'entregado');
+            const total = allOrders.length;
             
-            // 1. CABECERA LIMPIA
-            doc.setFillColor(30, 41, 59);
-            doc.rect(0, 0, 210, 35, 'F');
+            // Header
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
             doc.setFont("helvetica", "bold");
-            doc.text("LOGÍSTICA TOTAL: REPORTE DE GESTIÓN", 15, 22);
-            doc.setFontSize(9);
+            doc.text("LOGÍSTICA TOTAL PRO", 15, 20);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(`Fecha: ${new Date().toLocaleString()}`, 15, 30);
-            doc.text(`Pedidos Totales: ${allOrders.length} | Entregas Completadas: ${entregados.length}`, 140, 30);
-
-            // 2. RESUMEN POR REPARTIDOR (Sustituye al gráfico)
-            doc.setTextColor(30, 41, 59);
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.text("Desempeño Individual del Personal", 15, 50);
-
-            const staffStats = repartidores.map((r, i) => ({
-                name: r,
-                count: entregados.filter(o => o.repartidor === r).length,
-                color: COLORS[i % COLORS.length]
-            }));
-
-            // Dibujar bloques de resumen simples
-            let xPos = 15;
-            let yPos = 60;
+            doc.text(`Generado: ${new Date().toLocaleString()}`, 15, 30);
             
-            staffStats.forEach((s, idx) => {
-                const r = parseInt(s.color.slice(1,3), 16);
-                const g = parseInt(s.color.slice(3,5), 16);
-                const b = parseInt(s.color.slice(5,7), 16);
-                
-                doc.setFillColor(r, g, b);
-                doc.rect(xPos, yPos, 43, 20, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(8);
-                doc.text(s.name.toUpperCase(), xPos + 4, yPos + 7);
-                doc.setFontSize(12);
-                doc.text(`${s.count} entregas`, xPos + 4, yPos + 15);
-
-                xPos += 46;
-                if ((idx + 1) % 4 === 0) {
-                    xPos = 15;
-                    yPos += 24;
-                }
-            });
-
-            // 3. TABLA DE AUDITORÍA (Ocupando el resto de la página)
-            doc.setTextColor(30, 41, 59);
+            // Sección: Resumen
+            doc.setTextColor(15, 23, 42);
             doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.text("Historial Detallado de Operaciones", 15, yPos + 30);
+            doc.text(`Total general de pedidos: ${total}`, 15, 55);
+            
+            // ETIQUETAS DE COLORES (Repartidores)
+            let tagX = 15;
+            let tagY = 65;
+            repartidores.forEach((rep, i) => {
+                const count = allOrders.filter(o => o.repartidor === rep).length;
+                const colorObj = COLORS[i % COLORS.length];
+                
+                // Fondo etiqueta
+                doc.setFillColor(colorObj.rgb[0], colorObj.rgb[1], colorObj.rgb[2]);
+                const tagWidth = doc.getTextWidth(`${rep}: ${count}`) + 10;
+                
+                // Ajuste de línea si se sale
+                if (tagX + tagWidth > 190) { tagX = 15; tagY += 10; }
+                
+                doc.roundedRect(tagX, tagY, tagWidth, 8, 1, 1, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(9);
+                doc.text(`${rep}: ${count}`, tagX + 5, tagY + 5.5);
+                
+                tagX += tagWidth + 5;
+            });
+            
+            let currentY = tagY + 20;
 
-            doc.autoTable({
-                startY: yPos + 35,
-                head: [['# ID', 'OPERADOR / REPARTIDOR', 'ESTADO ACTUAL', 'HORA REGISTRO']],
-                body: allOrders.sort((a,b) => b.timestamp - a.timestamp).map(o => [
-                    `Ticket #${o.id}`, 
-                    o.repartidor || 'Sin asignar', 
-                    o.status.toUpperCase(), 
-                    o.time
-                ]),
-                headStyles: { fillColor: [30, 41, 59], fontSize: 10, halign: 'left' },
-                bodyStyles: { fontSize: 9, cellPadding: 4 },
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                margin: { left: 15, right: 15 },
-                theme: 'striped'
+            // Tablas individuales por repartidor
+            repartidores.forEach(rep => {
+                const repOrders = allOrders.filter(o => o.repartidor === rep);
+                if (repOrders.length === 0) return;
+                
+                if (currentY > 250) { doc.addPage(); currentY = 20; }
+                
+                doc.setTextColor(15, 23, 42);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.text(`Pedidos de ${rep}`, 15, currentY);
+                
+                doc.autoTable({
+                    startY: currentY + 5,
+                    head: [['Ticket', 'Estado', 'Hora de Registro']],
+                    body: repOrders.map(o => [`#${o.id}`, o.status.toUpperCase(), o.time]),
+                    headStyles: { fillColor: [79, 70, 229] },
+                    margin: { left: 15 }
+                });
+                currentY = doc.lastAutoTable.finalY + 15;
             });
 
-            doc.save(`LOGISTICA_PRO_HISTORIAL_${Date.now()}.pdf`);
-            showAlert("Reporte PDF generado");
+            // TABLA GENERAL AL FINAL
+            doc.addPage();
+            doc.setFillColor(30, 41, 59);
+            doc.rect(0, 0, 210, 15, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.text("AUDITORÍA GENERAL (TODOS LOS TICKETS POR ID)", 15, 10);
+            
+            const sortedAll = [...allOrders].sort((a,b) => parseInt(a.id) - parseInt(b.id));
+            doc.autoTable({
+                startY: 20,
+                head: [['ID Ticket', 'Repartidor Asignado', 'Estado Actual', 'Hora']],
+                body: sortedAll.map(o => [`#${o.id}`, o.repartidor || 'S/A', o.status.toUpperCase(), o.time]),
+                headStyles: { fillColor: [30, 41, 59] },
+                alternateRowStyles: { fillColor: [248, 250, 252] }
+            });
+
+            doc.save(`REPORTE_LOGISTICA_${Date.now()}.pdf`);
+            showAlert("PDF Descargado con éxito");
         };
 
-        // Event Listeners UI
+        // UI Handlers
+        document.getElementById('open-history-modal-btn').onclick = () => {
+            const db = getDB();
+            const orders = Object.values(db.orders);
+            document.getElementById('stat-total-orders').textContent = orders.length;
+            
+            const perf = document.getElementById('staff-performance-labels');
+            perf.innerHTML = '';
+            repartidores.forEach((r, idx) => {
+                const count = orders.filter(o => o.repartidor === r).length;
+                const delivered = orders.filter(o => o.repartidor === r && o.status === 'entregado').length;
+                const color = COLORS[idx % COLORS.length].bg;
+                perf.innerHTML += `
+                    <div class="bg-white border-l-4 p-4 rounded-xl shadow-sm min-w-[140px]" style="border-color: ${color}">
+                        <p class="text-[10px] font-black text-slate-400 uppercase">${r}</p>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-slate-800">${count}</span>
+                            <span class="text-[9px] font-bold text-emerald-500">${delivered} OK</span>
+                        </div>
+                    </div>`;
+            });
+
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            orders.sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
+                tbody.innerHTML += `<tr>
+                    <td class="px-6 py-4 font-black">#${o.id}</td>
+                    <td class="px-6 py-4 font-bold text-slate-600">${o.repartidor || '--'}</td>
+                    <td class="px-6 py-4 text-[10px] font-black uppercase ${o.status === 'entregado' ? 'text-emerald-500' : 'text-indigo-400'}">${o.status}</td>
+                    <td class="px-6 py-4 text-slate-400 text-xs">${o.time}</td>
+                </tr>`;
+            });
+            document.getElementById('historyModal').style.display = 'flex';
+        };
+
         document.getElementById('start-demo-btn').onclick = () => {
             document.getElementById('ops-panel').classList.remove('hidden');
             document.getElementById('kanban-container').classList.remove('hidden');
-            document.getElementById('start-demo-btn').innerHTML = '<i class=\"fas fa-check-circle\"></i> Consola Activa';
+            document.getElementById('start-demo-btn').innerHTML = '<i class="fas fa-check"></i> Activo';
             document.getElementById('start-demo-btn').classList.replace('bg-indigo-600', 'bg-emerald-500');
             localStorage.setItem(APP_STATE_KEY, 'true');
             initSlider(); initCols(); renderKanban();
@@ -426,9 +529,9 @@
         document.getElementById('open-staff-modal-btn').onclick = () => {
             const list = document.getElementById('staff-list'); list.innerHTML = '';
             repartidores.forEach((n, i) => {
-                list.innerHTML += `<div class=\"flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200\">
-                    <span class=\"font-bold text-slate-700 text-sm\">${n}</span>
-                    <button onclick=\"repartidores.splice(${i},1); localStorage.setItem(STAFF_KEY, JSON.stringify(repartidores)); initCols(); renderKanban(); document.getElementById('open-staff-modal-btn').click();\" class=\"text-red-400 hover:text-red-600\"><i class=\"fas fa-trash\"></i></button>
+                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span class="font-bold text-slate-700 text-sm">${n}</span>
+                    <button onclick="repartidores.splice(${i},1); localStorage.setItem(STAFF_KEY, JSON.stringify(repartidores)); initCols(); renderKanban(); document.getElementById('open-staff-modal-btn').click();" class="text-red-400"><i class="fas fa-times-circle"></i></button>
                 </div>`;
             });
             document.getElementById('staffModal').style.display = 'flex';
@@ -444,36 +547,10 @@
             }
         };
 
-        document.getElementById('open-history-modal-btn').onclick = () => {
-            const db = getDB();
-            const orders = Object.values(db.orders);
-            const badges = document.getElementById('staff-stats-badges');
-            badges.innerHTML = '';
-            repartidores.forEach((r) => {
-                const count = orders.filter(o => o.repartidor === r && o.status === 'entregado').length;
-                badges.innerHTML += `<div class=\"bg-white p-4 rounded-2xl border border-slate-100 shadow-sm\">
-                    <p class=\"text-[9px] font-black text-slate-400 uppercase mb-1\">${r}</p>
-                    <p class=\"text-2xl font-black text-slate-900\">${count}</p>
-                </div>`;
-            });
-
-            const tbody = document.getElementById('history-table-body');
-            tbody.innerHTML = '';
-            orders.sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-                tbody.innerHTML += `<tr>
-                    <td class=\"px-6 py-4 font-black\">#${o.id}</td>
-                    <td class=\"px-6 py-4 font-bold text-slate-600\">${o.repartidor || '--'}</td>
-                    <td class=\"px-6 py-4\"><span class=\"px-2 py-1 rounded-full text-[10px] font-black uppercase ${o.status === 'entregado' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-500'}\">${o.status}</span></td>
-                    <td class=\"px-6 py-4 text-slate-400 text-xs\">${o.time}</td>
-                </tr>`;
-            });
-            document.getElementById('historyModal').style.display = 'flex';
-        };
-
         document.getElementById('close-history-modal-btn').onclick = () => document.getElementById('historyModal').style.display = 'none';
         document.getElementById('close-staff-modal-btn').onclick = () => document.getElementById('staffModal').style.display = 'none';
-        document.getElementById('clear-history-modal-btn').onclick = () => { if(confirm("¿Vaciar historial?")) saveDB({orders:{}}); };
-        document.getElementById('reset-demo-btn').onclick = () => { if(confirm("¿Desea borrar toda la configuración y datos?")) { localStorage.clear(); location.reload(); } };
+        document.getElementById('clear-history-modal-btn').onclick = () => { if(confirm("¿Seguro que desea vaciar todos los registros?")) saveDB({orders:{}}); };
+        document.getElementById('reset-demo-btn').onclick = () => { if(confirm("¿Restablecer configuración de fábrica?")) { localStorage.clear(); location.reload(); } };
 
         window.onload = () => { if (localStorage.getItem(APP_STATE_KEY) === 'true') document.getElementById('start-demo-btn').click(); };
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; };
