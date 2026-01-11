@@ -424,15 +424,25 @@
         /* Evita fondo blanco del contenedor principal en modo claro */
         body.light-mode .app-main-wrap {
             background-color: #e0e7ff; /* tono más oscuro y profesional */
-            border: 3px solid rgba(173, 216, 230, 0.5); /*rgba(59,130,246,0.18)*/
+           
             padding: 1rem; /* alineado con p-4 del body */
             box-sizing: border-box;
             border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(15,23,42,0.08);
+              border: 1px solid rgba(0, 150, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            transition: box-shadow 220ms ease, border-color 220ms ease;
         }
         @media (min-width: 768px) {
             /* en pantallas medianas y grandes alinear con md:px-8 y md:pt-6 */
-            body.light-mode .app-main-wrap { padding: 0.9rem 1.8rem 0.0rem 1.8rem; }
+            body.light-mode .app-main-wrap, body.dark-mode .app-main-wrap { padding: 0.9rem 1.8rem 0.0rem 1.8rem; }
+        }
+
+        /* Estilos específicos para Modo Oscuro (solo cuando body tenga la clase 'dark-mode') */
+        body.dark-mode .app-main-wrap {
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            transition: box-shadow 220ms ease, border-color 220ms ease;
+             border-radius: 1rem;
         }
     </style>
 </head>
@@ -830,6 +840,12 @@
         document.getElementById('history-search').oninput = (e) => { searchQuery = e.target.value; updateHistoryUI(window.orders(), window.staff()); };
         document.getElementById('theme-toggle').onclick = () => {
             document.body.classList.toggle('light-mode');
+            // Añadir/remover explícitamente la clase 'dark-mode' para activar estilos específicos
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('dark-mode');
+            } else {
+                document.body.classList.add('dark-mode');
+            }
             const isL = document.body.classList.contains('light-mode');
             document.getElementById('theme-text').textContent = isL ? 'MODO OSCURO' : 'MODO CLARO';
         };
