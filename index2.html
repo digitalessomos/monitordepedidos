@@ -191,8 +191,8 @@
             --bg-main: #0f172a;
             --bg-card: #1e293b;
             --bg-input: #0f172a;
-            --cocina-bg: linear-gradient(180deg, rgba(6,182,212,0.12), rgba(3,105,161,0.06));
-            --mostrador-bg: rgba(245,158,11,0.12);
+            --cocina-bg: var(--mostrador-bg);
+            --mostrador-bg: #4D2610;
             --repartidor-bg: rgba(139,92,246,0.06);
             --accent-emerald: #10b981;       
             --accent-violet: #8b5cf6;
@@ -206,8 +206,8 @@
             --bg-main: #f1f5f9;
             --bg-card: #ffffff;
             --bg-input: #f8fafc;
-            --cocina-bg: linear-gradient(180deg, rgba(3,105,161,0.12), rgba(6,182,212,0.06));
-            --mostrador-bg: rgba(245,158,11,0.10);
+            --cocina-bg: var(--mostrador-bg);
+            --mostrador-bg: #4D2610;
             --repartidor-bg: rgba(139,92,246,0.04);
             --text-main: #0f172a;     
             --text-muted: #64748b;
@@ -355,7 +355,7 @@
         }
 
         body.light-mode .cocina-panel {
-            background: rgba(3,105,161,0.18) !important;
+            background: var(--cocina-bg) !important;
             border-color: rgba(6,182,212,0.40) !important;
             box-shadow: 0 8px 30px rgba(6,182,212,0.10);
         }
@@ -363,23 +363,23 @@
         /* Zona Mostrador: Columna Entrada (resaltada para modo oscuro y claro) */
         #col-unassigned {
             background: var(--mostrador-bg) !important;
-            border-color: rgba(245,158,11,0.28) !important;
-            box-shadow: 0 8px 30px rgba(245,158,11,0.06);
+            border-color: rgba(26,34,56,0.28) !important;
+            box-shadow: 0 8px 30px rgba(26,34,56,0.06);
             transition: box-shadow 200ms ease, background-color 200ms ease, border-color 200ms ease;
         }
 
         body.light-mode #col-unassigned {
-            background: rgba(245,158,11,0.18) !important;
-            border-color: rgba(245,158,11,0.40) !important;
-            box-shadow: 0 8px 30px rgba(245,158,11,0.10);
+            background: var(--mostrador-bg) !important;
+            border-color: rgba(26,34,56,0.40) !important;
+            box-shadow: 0 8px 30px rgba(26,34,56,0.10);
         }
 
         /* Contador de pedidos en Mostrador: más visible */
         #count-unassigned {
-            background-color: #f59e0b !important;
+            background-color: var(--mostrador-bg) !important;
             color: #ffffff !important;
-            border: 1px solid rgba(245,158,11,0.25) !important;
-            box-shadow: 0 6px 14px rgba(245,158,11,0.12);
+            border: 1px solid rgba(26,34,56,0.25) !important;
+            box-shadow: 0 6px 14px rgba(26,34,56,0.12);
         }
 
         /* Repartidores: fondo distintivo para cada columna (aplicado desde JS) */
@@ -533,12 +533,19 @@
         };
 
         function getStaffColor(name, idx){
-            if(!name) return COLORS[idx % COLORS.length].bg;
+            if(!name) return COLORS[Math.abs(idx) % COLORS.length].bg;
             const key = name.toLowerCase();
             for(const k in STAFF_COLOR_MAP){
                 if(key.includes(k)) return STAFF_COLOR_MAP[k];
             }
-            return COLORS[idx % COLORS.length].bg;
+            // Deterministic fallback: hash the name to pick a color from COLORS
+            let h = 0;
+            for(let i = 0; i < key.length; i++){
+                h = ((h << 5) - h) + key.charCodeAt(i);
+                h |= 0; // force 32-bit int
+            }
+            const idxFromName = Math.abs(h) % COLORS.length;
+            return COLORS[idxFromName].bg;
         }
 
         function playSound(f) { 
@@ -573,7 +580,7 @@
                         b.classList.add('num-btn-delivered');
                     } else if (o.repartidor) {
                         const staffIdx = currentStaff.indexOf(o.repartidor);
-                        const assignedColor = staffIdx !== -1 ? COLORS[staffIdx % COLORS.length].bg : '#64748b';
+                        const assignedColor = getStaffColor(o.repartidor, staffIdx) || '#64748b';
                         b.style.backgroundColor = assignedColor;
                         b.style.borderColor = assignedColor;
                         b.style.color = 'white';
@@ -759,8 +766,9 @@
             currentStaff.forEach((r, i) => {
                 const count = all.filter(o => o.repartidor === r).length;
                 const ok = all.filter(o => o.repartidor === r && o.status === 'entregado').length;
+                const labelColor = getStaffColor(r, i);
                 perf.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-3 rounded-xl min-w-[100px]">
-                    <p class="text-[7px] font-black text-slate-500 uppercase mb-1" style="color:${COLORS[i%COLORS.length].bg}">${r}</p>
+                    <p class="text-[7px] font-black text-slate-500 uppercase mb-1" style="color:${labelColor}">${r}</p>
                     <div class="flex items-baseline gap-1"><span class="text-xl font-black text-white">${count}</span><span class="text-[8px] font-black text-emerald-500">${ok} OK</span></div>
                 </div>`;
             });
