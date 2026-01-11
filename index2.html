@@ -429,20 +429,53 @@
             box-sizing: border-box;
             border-radius: 1rem;
               border: 1px solid rgba(0, 150, 255, 0.3);
-            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.1);/* 0 0 15px rgba(0, 150, 255, 0.2)*/
             transition: box-shadow 220ms ease, border-color 220ms ease;
         }
         @media (min-width: 768px) {
             /* en pantallas medianas y grandes alinear con md:px-8 y md:pt-6 */
-            body.light-mode .app-main-wrap, body.dark-mode .app-main-wrap { padding: 0.9rem 1.8rem 0.0rem 1.8rem; }
+            body.light-mode .app-main-wrap, body.dark-mode .app-main-wrap { padding:1rem 1.8rem 0.0rem 1.8rem; }
         }
 
         /* Estilos específicos para Modo Oscuro (solo cuando body tenga la clase 'dark-mode') */
         body.dark-mode .app-main-wrap {
             border: 1px solid rgba(0, 150, 255, 0.3);
-            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.1);
             transition: box-shadow 220ms ease, border-color 220ms ease;
              border-radius: 1rem;
+        }
+
+        /* Botones 'FINALIZAR' estilizados (dentro de tickets blancos) */
+        body:not(.light-mode) .kanban-col .glass-panel .finish-btn {
+            background-color: #e8f5e9 !important; /* Verde menta suave */
+            color: #064e3b !important; /* Verde oscuro legible */
+            border: none !important;
+            border-radius: 8px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            transition: all 0.3s ease !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            padding: 0.5rem 0.9rem !important;
+            text-transform: uppercase !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        body:not(.light-mode) .kanban-col .glass-panel .finish-btn:hover {
+            background-color: #10b981 !important; /* Verde esmeralda sólido */
+            color: #ffffff !important;
+            box-shadow: 0 8px 24px rgba(16,185,129,0.16) !important;
+        }
+
+        body:not(.light-mode) .kanban-col .glass-panel .finish-btn:active {
+            transform: scale(0.98) !important;
+        }
+
+        body:not(.light-mode) .kanban-col .glass-panel .finish-btn:focus {
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(16,185,129,0.12) !important;
         }
     </style>
 </head>
