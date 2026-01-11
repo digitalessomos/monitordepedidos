@@ -524,6 +524,23 @@
         let touchDraggedId = null;
         const COLORS = [{ bg: '#6366f1' }, { bg: '#8b5cf6' }, { bg: '#3b82f6' }, { bg: '#f59e0b' }, { bg: '#ec4899' }, { bg: '#06b6d4' }];
 
+        // Paleta de colores específica por repartidor (match parcial, case-insensitive)
+        const STAFF_COLOR_MAP = {
+            lucas: '#007BFF',    // Azul Eléctrico
+            juan:  '#8A2BE2',    // Violeta Neón
+            pedro: '#FF8C00',    // Naranja Intenso
+            cri:   '#FFD700'     // Amarillo Oro
+        };
+
+        function getStaffColor(name, idx){
+            if(!name) return COLORS[idx % COLORS.length].bg;
+            const key = name.toLowerCase();
+            for(const k in STAFF_COLOR_MAP){
+                if(key.includes(k)) return STAFF_COLOR_MAP[k];
+            }
+            return COLORS[idx % COLORS.length].bg;
+        }
+
         function playSound(f) { 
             if (!synth) synth = new Tone.PolySynth(Tone.Synth).toDestination();
             if (Tone.context.state !== 'running') Tone.start();
@@ -620,7 +637,8 @@
             setupDropZone(document.getElementById('col-unassigned'), null);
 
             currentStaff.forEach((r, idx) => {
-                const color = COLORS[idx % COLORS.length].bg;
+                // Resolve the specific color for known repartidors (fallback to COLORS)
+                const color = getStaffColor(r, idx);
                 const colId = `col-${r.replace(/\s/g, '')}`;
                 const inputId = `input-${r.replace(/\s/g, '')}`;
                 const col = document.createElement('div');
@@ -637,10 +655,9 @@
                 `;
                 const dz = col.querySelector('.kanban-col');
                 setupDropZone(dz, r);
-                // Apply a soft tint for the repartidor column using the staff color
+                // Make column background uniform dark gray; keep a subtle border accent using the staff color
                 try{
-                    // Apply a lighter tint so repartidor columns are visually distinct
-                    dz.style.backgroundColor = hexToRgba(color, 0.30);
+                    dz.style.backgroundColor = 'rgba(15,23,42,0.6)';
                     dz.style.borderColor = hexToRgba(color, 0.12);
                 }catch(e){ /* ignore if color parsing fails */ }
                 col.querySelector('.quick-add-btn').onclick = () => {
@@ -657,7 +674,9 @@
             active.forEach(o => {
                 const card = document.createElement('div');
                 card.className = "glass-panel p-4 rounded-xl shadow-md card-draggable flex flex-col gap-3 border-l-4";
-                card.style.borderLeftColor = o.repartidor ? COLORS[currentStaff.indexOf(o.repartidor) % COLORS.length].bg : '#64748b';
+                const staffIdx = currentStaff.indexOf(o.repartidor);
+                const staffColor = o.repartidor ? getStaffColor(o.repartidor, staffIdx) : '#64748b';
+                card.style.borderLeftColor = staffColor;
                 card.draggable = true;
                 
                 let actionArea = o.repartidor ? 
