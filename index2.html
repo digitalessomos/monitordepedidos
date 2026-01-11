@@ -203,6 +203,7 @@
         }
 
         body.light-mode {
+         
             --bg-main: #f1f5f9;
             --bg-card: #ffffff;
             --bg-input: #f8fafc;
@@ -222,11 +223,11 @@
             touch-action: manipulation; 
             overflow: hidden;
             transition: background-color 0.3s ease, color 0.3s ease;
-            height: 100vh;
+            height: 100vh; 
             display: flex;
             flex-direction: column;
         }
-
+ 
         .column-scroll::-webkit-scrollbar { width: 4px; }
         .column-scroll::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; opacity: 0.3; }
         
@@ -419,9 +420,24 @@
         #header-section { flex-shrink: 0; }
         #ops-panel { min-height: 160px; flex-shrink: 0; }
         #kanban-container { flex-grow: 1; overflow-y: auto; }
+
+        /* Evita fondo blanco del contenedor principal en modo claro */
+        body.light-mode .app-main-wrap {
+            background-color: #e0e7ff; /* tono más oscuro y profesional */
+            border: 1px solid rgba(59,130,246,0.18);
+            padding: 1rem; /* alineado con p-4 del body */
+            box-sizing: border-box;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(15,23,42,0.08);
+        }
+        @media (min-width: 768px) {
+            /* en pantallas medianas y grandes alinear con md:px-8 y md:pt-6 */
+            body.light-mode .app-main-wrap { padding: 0.6rem 0.8rem 0.0rem 0.8rem; }
+        }
     </style>
 </head>
 <body class="p-4 md:px-8 md:pt-6">
+    
     <div id="loading-screen">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mb-4"></div>
         <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Sincronizando con la Nube...</p>
@@ -429,7 +445,7 @@
 
     <div id="drag-ghost"></div>
 
-    <div class="max-w-7xl mx-auto w-full flex flex-col h-full">
+    <div class="max-w-7xl mx-auto w-full flex flex-col h-full app-main-wrap">
         <!-- Header -->
         <header id="header-section" class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
             <div class="flex items-center gap-4 flex-shrink-0">
