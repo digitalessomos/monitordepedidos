@@ -383,6 +383,15 @@
         }
 
         /* Repartidores: fondo distintivo para cada columna (aplicado desde JS) */
+        /* Forzar que el fondo de las columnas de repartidores use el fondo principal (modo oscuro) */
+        .rep-col .kanban-col {
+            background: var(--bg-main) !important;
+        }
+
+        /* En modo claro, forzar fondo oscuro para columnas de repartidores (evita fondo blanco) */
+        body.light-mode .rep-col .kanban-col {
+            background: #0f172a !important;
+        }
 
         /* Reducir en 15% el ancho de cada columna de repartidor */
         .rep-col {
@@ -662,9 +671,9 @@
                 `;
                 const dz = col.querySelector('.kanban-col');
                 setupDropZone(dz, r);
-                // Make column background uniform dark gray; keep a subtle border accent using the staff color
+                // Make column background match app dark body background; keep a subtle border accent using the staff color
                 try{
-                    dz.style.backgroundColor = 'rgba(15,23,42,0.6)';
+                    dz.style.setProperty('background-color','var(--bg-main)');
                     dz.style.borderColor = hexToRgba(color, 0.12);
                 }catch(e){ /* ignore if color parsing fails */ }
                 col.querySelector('.quick-add-btn').onclick = () => {
