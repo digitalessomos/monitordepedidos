@@ -393,6 +393,24 @@
             background: #0f172a !important;
         }
 
+        /* En modo oscuro: tarjetas de pedidos (Cocina, Mostrador, Repartidores) deben ser blancas */
+        body:not(.light-mode) .kanban-col .glass-panel {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            /* Mantener borde izquierdo para que JS pueda colorearlo (no sobreescribir border-left-width) */
+            border-top: 1px solid rgba(0,0,0,0.08);
+            border-right: 1px solid rgba(0,0,0,0.08);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 8px 20px rgba(2,6,23,0.06) !important;
+        }
+
+        /* En modo oscuro: botones numéricos de la cocina (tickets) deben ser blancos por defecto, pero permitir estilos inline (JS) */
+        body:not(.light-mode) .cocina-panel .num-btn {
+            background: #ffffff;
+            color: #0f172a;
+            border-color: rgba(0,0,0,0.08);
+        }
+
         /* Reducir en 15% el ancho de cada columna de repartidor */
         .rep-col {
             width: calc(16rem * 0.85) !important;
