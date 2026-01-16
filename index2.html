@@ -188,8 +188,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         
         :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
+            --bg-main: #0f172a; /*#F4F7F6*/
+            --bg-card: #1e293b;/*#F4F7F6*/
             --bg-input: #0f172a;
             --cocina-bg: var(--mostrador-bg);
             --mostrador-bg: #4D2610;
@@ -204,7 +204,7 @@
 
         body.light-mode {
          
-            --bg-main: #f1f5f9;
+            --bg-main:#0f172a ; /*  #F4F7F6 */
             --bg-card: #ffffff;
             --bg-input: #f8fafc;
             --cocina-bg: var(--mostrador-bg);
@@ -423,7 +423,7 @@
 
         /* Evita fondo blanco del contenedor principal en modo claro */
         body.light-mode .app-main-wrap {
-            background-color: #e0e7ff; /* tono más oscuro y profesional */
+            background-color: #F4F7F6;/*#e0e7ff  tono más oscuro y profesional , otro #f1f5f9*/
            
             padding: 1rem; /* alineado con p-4 del body */
             box-sizing: border-box;
@@ -432,6 +432,7 @@
             box-shadow: 0 0 20px rgba(0, 150, 255, 0.1);/* 0 0 15px rgba(0, 150, 255, 0.2)*/
             transition: box-shadow 220ms ease, border-color 220ms ease;
         }
+ 
         @media (min-width: 768px) {
             /* en pantallas medianas y grandes alinear con md:px-8 y md:pt-6 */
             body.light-mode .app-main-wrap, body.dark-mode .app-main-wrap { padding:1rem 1.8rem 0.0rem 1.8rem; }
