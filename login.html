@@ -55,7 +55,7 @@
     <div id="app-content" class="hidden text-center">
         <h1 class="text-4xl font-black">BIENVENIDO: <span id="user-role-display" class="text-emerald-500"></span></h1>
         <p class="mt-4 text-slate-400">Redirigiendo a la consola de despacho...</p>
-        <button onclick="location.reload()" class="mt-8 text-xs text-slate-500 underline uppercase">Cerrar Sesión</button>
+        <button onclick="window.location.href = 'https://monitordepedidos.netlify.app/login'" class="mt-8 text-xs text-slate-500 underline uppercase">Cerrar Sesión</button>
     </div>
 
     <script type="module">
@@ -101,13 +101,13 @@
 
         async function startFirebaseSession(role) {
                         const firebaseConfig = {
-        apiKey: "AIzaSyDfZvwhzUE3Qy1Luoyb5PPaNwM5D2MniiA",
-        authDomain: "monitordepedidos-2b20b.firebaseapp.com",
-        projectId: "monitordepedidos-2b20b",
-        storageBucket: "monitordepedidos-2b20b.firebasestorage.app",
-        messagingSenderId: "544194700696",
-        appId: "1:544194700696:web:29f2e1c289ed1806a577ed"
-    };
+            apiKey: "AIzaSyAC0K_7GdPfZ1idnpa0VkwgZ9zBYOB4PRk",
+            authDomain: "crudfbtest.firebaseapp.com",
+            projectId: "crudfbtest",
+            storageBucket: "crudfbtest.firebasestorage.app",
+            messagingSenderId: "171088113288",
+            appId: "1:171088113288:web:eb8b6e333edce9be90b93d"
+        };
                         const config = firebaseConfig;
                         const app = initializeApp(config);
             auth = getAuth(app);
@@ -133,7 +133,7 @@
             console.log("Sesión iniciada como:", role);
 
             // Redirigir a index2.html pasando el rol en querystring
-            window.location.href = 'index2.html?role=' + encodeURIComponent(role);
+            window.location.href = 'https://monitordepedidos.netlify.app/index?role=' + encodeURIComponent(role);
         }
 
         function showError(text) {
