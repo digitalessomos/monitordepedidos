@@ -1,6 +1,7 @@
 import { authService } from './services/auth.service.js';
 import { databaseService } from './services/database.service.js';
 import { uiManager } from './ui/ui.manager.js';
+import { getURLs } from './config/urls.js';
 
 // Global App State
 window.AppState = {
@@ -24,7 +25,8 @@ const handlers = {
     onUpdateStaff: (list) => databaseService.updateStaff(list),
     onSignOut: () => authService.logout().finally(() => {
         localStorage.removeItem('rutatotal_role');
-        window.location.href = 'https://monitordepedidos.netlify.app/login';
+        const URLs = getURLs();
+        window.location.href = URLs.login;
     })
 };
 

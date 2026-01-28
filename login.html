@@ -55,13 +55,18 @@
     <div id="app-content" class="hidden text-center">
         <h1 class="text-4xl font-black">BIENVENIDO: <span id="user-role-display" class="text-emerald-500"></span></h1>
         <p class="mt-4 text-slate-400">Redirigiendo a la consola de despacho...</p>
-        <button onclick="window.location.href = 'https://monitordepedidos.netlify.app/login'" class="mt-8 text-xs text-slate-500 underline uppercase">Cerrar Sesión</button>
+        <button onclick="window.location.href = window.getURLs().login" class="mt-8 text-xs text-slate-500 underline uppercase">Cerrar Sesión</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        import { getURLs } from './src/config/urls.js';
+
+        // Detectar ambiente y obtener URLs base
+        const URLs = getURLs();
 
         let selectedRole = null;
         let db, auth, appId;
@@ -132,8 +137,8 @@
 
             console.log("Sesión iniciada como:", role);
 
-            // Redirigir a index2.html pasando el rol en querystring
-            window.location.href = 'https://monitordepedidos.netlify.app/index?role=' + encodeURIComponent(role);
+            // Redirigir al app con el rol en querystring
+            window.location.href = URLs.app + '?role=' + encodeURIComponent(role);
         }
 
         function showError(text) {
@@ -142,6 +147,9 @@
             msg.classList.remove('hidden');
             setTimeout(() => msg.classList.add('hidden'), 3000);
         }
+
+        // Hacer la función getBaseURL disponible globalmente para el botón
+        window.getURLs = () => URLs;
     </script>
 </body>
 </html>
