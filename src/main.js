@@ -8,7 +8,8 @@ window.AppState = {
     data: {
         orders: {},
         staff: [],
-        currentUser: null
+        currentUser: null,
+        userRole: 'operativo'
     },
     update(key, payload) {
         this.data[key] = payload;
@@ -21,8 +22,20 @@ const handlers = {
     onCreateOrder: (id, rep) => databaseService.createOrder(id, rep).then(() => uiManager.playSound(rep ? "G4" : "E4")),
     onAssignOrder: (id, rep) => databaseService.assignOrder(id, rep).then(() => uiManager.playSound("G4")),
     onFinalizeOrder: (id) => databaseService.finalizeOrder(id).then(() => uiManager.playSound("C5")),
-    onDeleteOrder: (id) => databaseService.deleteOrder(id).then(() => uiManager.playSound("A2")),
-    onUpdateStaff: (list) => databaseService.updateStaff(list),
+    onDeleteOrder: (id) => {
+        if (window.AppState.data.userRole !== 'admin') {
+            console.warn("Acción denegada: Solo administradores pueden borrar pedidos.");
+            return Promise.resolve();
+        }
+        return databaseService.deleteOrder(id).then(() => uiManager.playSound("A2"));
+    },
+    onUpdateStaff: (list) => {
+        if (window.AppState.data.userRole !== 'admin') {
+            console.warn("Acción denegada: Solo administradores pueden gestionar la flota.");
+            return Promise.resolve();
+        }
+        return databaseService.updateStaff(list);
+    },
     onSignOut: () => authService.logout().finally(() => {
         localStorage.removeItem('rutatotal_role');
         const URLs = getURLs();
@@ -34,33 +47,109 @@ const handlers = {
 const init = async () => {
     const loadingScreen = document.getElementById('loading-screen');
     
-    authService.onAuthChange((user) => {
+    authService.onAuthChange(async (user) => {
         if (user) {
+            let role = localStorage.getItem('rutatotal_role') || 'operativo';
+            let isAuthorized = false;
+
+            if (user.isAnonymous) {
+                // Si es anónimo, confiamos en que pasó por el flujo de PIN en login.html
+                // y que el rol en localStorage es correcto. 
+                isAuthorized = role === 'operativo';
+            } else {
+                // Si es Google Auth, verificamos en Firestore
+                isAuthorized = await authService.checkAuthorization(user.email);
+                role = isAuthorized ? 'admin' : null;
+            }
+            
+            if (!isAuthorized) {
+                console.warn("User authenticated but not authorized.");
+                await authService.logout();
+                const urls = getURLs();
+                window.location.href = urls.login + '?error=unauthorized';
+                return;
+            }
+
+            window.AppState.data.userRole = role; // Store role in state
             window.AppState.update('currentUser', user);
             
-            const params = new URLSearchParams(window.location.search);
-            const role = params.get('role') || localStorage.getItem('rutatotal_role') || 'Operador';
-            
             const userDisplay = document.getElementById('user-display');
-            if (userDisplay) userDisplay.textContent = `${role.toUpperCase()} • ID: ${user.uid}`;
+            if (userDisplay) {
+                const displayName = user.isAnonymous ? localStorage.getItem('rutatotal_staff_name') : user.email;
+                userDisplay.textContent = `${role.toUpperCase()} • ${displayName}`;
+            }
 
-            // Subscribe to real-time data
+            // Aplicar restricciones de rol antes de mostrar la app
+            applyRoleRestrictions(role);
+
+            // Subscribe to real-time data ONLY after verification
             databaseService.subscribeToOrders((orders) => window.AppState.update('orders', orders));
             databaseService.subscribeToStaff((staff) => window.AppState.update('staff', staff));
 
-            if (loadingScreen) loadingScreen.style.display = 'none';
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+            }
             document.getElementById('kanban-container')?.classList.remove('hidden');
             document.getElementById('ops-panel')?.classList.remove('hidden');
         } else {
             // No user, redirect to login if not already there
-            if (!window.location.pathname.includes('login.html')) {
-                window.location.href = 'login.html';
+            const urls = getURLs();
+            if (!window.location.pathname.includes(urls.login)) {
+                window.location.href = urls.login;
             }
         }
     });
 
-    await authService.loginAnonymously();
+    // Inicilizamos sin login automático
 };
+
+function applyRoleRestrictions(role) {
+    const isOperativo = role === 'operativo';
+    
+    // Elementos a ocultar/mostrar según rol
+    const adminOnlyElements = [
+        'download-pdf-btn',
+        'clear-history-btn',
+        'new-staff-name',
+        'add-staff-btn'
+    ];
+    
+    adminOnlyElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isOperativo ? 'none' : 'block';
+    });
+
+    // Gestionar mensaje de feedback
+    const feedbackMsg = 'Funciones de administración solo para Encargados';
+    const modalFooters = [
+        { id: 'historyModal', footerSelector: '.mt-6' },
+        { id: 'staffModal', footerSelector: '.modal-content' }
+    ];
+
+    modalFooters.forEach(config => {
+        const modal = document.getElementById(config.id);
+        if (modal) {
+            let feedback = modal.querySelector('.role-feedback');
+            if (!feedback && isOperativo) {
+                feedback = document.createElement('p');
+                feedback.className = 'role-feedback text-[10px] text-slate-500 font-bold uppercase mt-4 text-center w-full';
+                feedback.textContent = feedbackMsg;
+                modal.querySelector(config.footerSelector).appendChild(feedback);
+            } else if (feedback) {
+                feedback.style.display = isOperativo ? 'block' : 'none';
+            }
+        }
+    });
+
+    // Desbloquear botones de acceso a modales
+    ['open-staff-modal-btn', 'open-history-modal-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'flex';
+    });
+    
+    if (isOperativo) console.log("Modo Operativo: Restricciones de acción aplicadas.");
+}
 
 // Event Listeners and Global Setup
 window.onload = () => {
@@ -95,7 +184,7 @@ window.onload = () => {
     };
 
     document.getElementById('open-staff-modal-btn').onclick = () => {
-        uiManager.renderStaffListModal(window.AppState.data.staff, handlers.onUpdateStaff);
+        uiManager.renderStaffListModal(window.AppState.data.staff, handlers.onUpdateStaff, window.AppState.data.userRole);
         togModal('staffModal', true);
     };
     document.getElementById('close-staff-modal-btn').onclick = () => togModal('staffModal', false);
@@ -129,7 +218,8 @@ window.onload = () => {
 
     document.getElementById('logoutBtn').onclick = () => handlers.onSignOut();
 
-    // Loading screen fade out
+    // Loading screen fade out - handled in onAuthChange
+    /*
     setTimeout(() => {
         const ls = document.getElementById('loading-screen');
         if (ls) {
@@ -137,4 +227,5 @@ window.onload = () => {
             setTimeout(() => ls.style.display = 'none', 500);
         }
     }, 1000);
+    */
 };

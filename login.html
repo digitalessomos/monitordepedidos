@@ -25,26 +25,25 @@
         </div>
 
         <div class="glass p-8 rounded-3xl shadow-2xl">
-            <div id="role-selector" class="grid grid-cols-2 gap-4 mb-8">
-                <div onclick="selectRole('admin')" id="role-admin" class="role-card glass p-4 rounded-2xl text-center">
-                    <i class="fas fa-user-tie text-xl mb-2 text-indigo-400"></i>
-                    <p class="text-[10px] font-bold uppercase">Encargado</p>
-                </div>
-                <div onclick="selectRole('staff')" id="role-staff" class="role-card glass p-4 rounded-2xl text-center">
-                    <i class="fas fa-truck text-xl mb-2 text-emerald-400"></i>
-                    <p class="text-[10px] font-bold uppercase">Operativo</p>
-                </div>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2">Código de Acceso</label>
-                    <input type="password" id="access-code" placeholder="••••••" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mt-1 focus:border-emerald-500 outline-none transition-all text-center tracking-widest">
-                </div>
-                
-                <button onclick="handleLogin()" id="login-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20 transition-all">
-                    Entrar al Sistema
+            <div class="text-center mb-6">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Administradores</p>
+                <button onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-4 bg-white hover:bg-slate-100 text-slate-900 font-bold py-4 rounded-xl transition-all shadow-lg group mb-6">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
+                    <span class="text-sm">Iniciar Sesión con Google</span>
                 </button>
+
+                <div class="relative flex items-center gap-4 mb-6">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">o Personal Operativo</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <input type="password" id="pin-code" placeholder="PIN de Acceso" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl focus:border-emerald-500 outline-none transition-all text-center tracking-widest">
+                    <button onclick="handlePINLogin()" class="w-full bg-slate-800 hover:bg-slate-700 text-emerald-500 font-black py-4 rounded-xl uppercase text-xs tracking-widest shadow-lg transition-all">
+                        Entrar con PIN
+                    </button>
+                </div>
             </div>
 
             <p id="error-msg" class="text-red-500 text-[10px] font-bold text-center mt-4 hidden uppercase"></p>
@@ -59,96 +58,56 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getURLs } from '../src/config/urls.js';
+        import { authService } from '../src/services/auth.service.js';
 
-        import { getURLs } from './src/config/urls.js';
-
-        // Detectar ambiente y obtener URLs base
         const URLs = getURLs();
 
-        let selectedRole = null;
-        let db, auth, appId;
-
-        // Códigos de ejemplo (En producción esto se valida en base de datos)
-        const CODES = {
-            admin: "1234",
-            staff: "0000"
-        };
-
-        window.selectRole = (role) => {
-            selectedRole = role;
-            document.getElementById('role-admin').classList.remove('active');
-            document.getElementById('role-staff').classList.remove('active');
-            document.getElementById(`role-${role}`).classList.add('active');
-        };
-
-        window.handleLogin = async () => {
-            const codeInput = document.getElementById('access-code').value;
+        window.handleGoogleLogin = async () => {
             const errorMsg = document.getElementById('error-msg');
+            errorMsg.classList.add('hidden');
 
-            if (!selectedRole) {
-                showError("Selecciona un tipo de usuario");
+            try {
+                const user = await authService.loginWithGoogle();
+                const isAuthorized = await authService.checkAuthorization(user.email);
+
+                if (isAuthorized) {
+                    localStorage.setItem('rutatotal_role', 'admin');
+                    window.location.href = URLs.app + '?role=admin';
+                } else {
+                    await authService.logout();
+                    showError("Usuario no autorizado. Contacte al administrador.");
+                }
+            } catch (e) {
+                console.error("Login Error:", e);
+                showError("Error al iniciar sesión con Google");
+            }
+        };
+
+        window.handlePINLogin = async () => {
+            const pin = document.getElementById('pin-code').value;
+            if (!pin) {
+                showError("Ingresa tu PIN de acceso");
                 return;
             }
 
-            if (codeInput === CODES[selectedRole]) {
-                try {
-                    await startFirebaseSession(selectedRole);
-                } catch (e) {
-                    showError("Error de conexión Cloud");
-                }
-            } else {
-                showError("Código de acceso incorrecto");
-            }
-        };
-
-        async function startFirebaseSession(role) {
-                        const firebaseConfig = {
-            apiKey: "AIzaSyAC0K_7GdPfZ1idnpa0VkwgZ9zBYOB4PRk",
-            authDomain: "crudfbtest.firebaseapp.com",
-            projectId: "crudfbtest",
-            storageBucket: "crudfbtest.firebasestorage.app",
-            messagingSenderId: "171088113288",
-            appId: "1:171088113288:web:eb8b6e333edce9be90b93d"
-        };
-                        const config = firebaseConfig;
-                        const app = initializeApp(config);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'rutatotal-app';
-
-            const userCredential = await signInAnonymously(auth);
-            const uid = userCredential.user.uid;
-
-            // Guardamos el perfil en Firestore para persistencia de rol
-            await setDoc(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'info'), {
-                role: role,
-                lastLogin: Date.now()
-            });
-
-            // Éxito: Guardar rol y redirigir a la consola principal
             try {
-                localStorage.setItem('rutatotal_role', role);
+                const staffData = await authService.loginWithPIN(pin);
+                localStorage.setItem('rutatotal_role', 'operativo');
+                localStorage.setItem('rutatotal_staff_name', staffData.name || 'Operario');
+                window.location.href = URLs.app + '?role=operativo';
             } catch (e) {
-                console.warn('No se pudo guardar el rol en localStorage', e);
+                showError("Acceso denegado: PIN incorrecto");
             }
-
-            console.log("Sesión iniciada como:", role);
-
-            // Redirigir al app con el rol en querystring
-            window.location.href = URLs.app + '?role=' + encodeURIComponent(role);
-        }
+        };
 
         function showError(text) {
             const msg = document.getElementById('error-msg');
             msg.textContent = text;
             msg.classList.remove('hidden');
-            setTimeout(() => msg.classList.add('hidden'), 3000);
+            setTimeout(() => msg.classList.add('hidden'), 5000);
         }
 
-        // Hacer la función getBaseURL disponible globalmente para el botón
         window.getURLs = () => URLs;
     </script>
 </body>

@@ -12,11 +12,11 @@ export const uiManager = {
     // 1. Core Render Loop
     renderApp(state, handlers) {
         if (!state) return;
-        const { orders, staff } = state;
+        const { orders, staff, userRole } = state;
 
         this.renderKitchen(orders, staff, handlers);
         this.renderKanban(orders, staff, handlers);
-        this.renderHistory(orders, staff, handlers);
+        this.renderHistory(orders, staff, handlers, userRole);
     },
 
     // 2. Component: Kitchen (Cocina)
@@ -183,7 +183,8 @@ export const uiManager = {
     },
 
     // 4. Component: History (Reportes)
-    renderHistory(orders, staff, handlers) {
+    renderHistory(orders, staff, handlers, role) {
+        const isOperativo = role === 'operativo';
         const all = Object.values(orders);
         const filtered = all.filter(o => o.id.toString().includes(searchQuery)).sort((a, b) => b.timestamp - a.timestamp);
 
@@ -213,7 +214,7 @@ export const uiManager = {
                     <td class="px-6 py-3 font-bold">${o.repartidor || '-'}</td>
                     <td class="px-6 py-3 uppercase text-[8px]">${o.repartidor ? o.status : 'EN CASA (LOCAL)'}</td>
                     <td class="px-6 py-3 text-right">
-                        <button class="delete-history-btn text-slate-700 hover:text-red-500 transition" data-id="${o.id}"><i class="fas fa-trash"></i></button>
+                        ${!isOperativo ? `<button class="delete-history-btn text-slate-700 hover:text-red-500 transition" data-id="${o.id}"><i class="fas fa-trash"></i></button>` : ''}
                     </td>
                 </tr>
              `).join('');
@@ -321,12 +322,13 @@ export const uiManager = {
         touchDraggedId = null;
     },
 
-    renderStaffListModal(staff, onUpdateStaff) {
+    renderStaffListModal(staff, onUpdateStaff, role) {
+        const isOperativo = role === 'operativo';
         const list = document.getElementById('staff-list');
         list.innerHTML = staff.map((n, i) => `
             <div class="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-800">
                 <span class="font-black text-slate-300 text-[10px] uppercase">${n}</span>
-                <button class="remove-staff text-red-500/50 hover:text-red-500" data-idx="${i}"><i class="fas fa-times-circle"></i></button>
+                ${!isOperativo ? `<button class="remove-staff text-red-500/50 hover:text-red-500" data-idx="${i}"><i class="fas fa-times-circle"></i></button>` : ''}
             </div>
          `).join('');
 

@@ -1,8 +1,12 @@
-import { db, APP_ID } from '../config/firebase.config.js';
+import { auth, db, APP_ID } from '../config/firebase.config.js';
 import { doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export const databaseService = {
     subscribeToOrders(callback) {
+        if (!auth.currentUser) {
+            console.warn("Attempted to subscribe to orders without authentication.");
+            return () => {};
+        }
         const ordersRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'orders');
         return onSnapshot(ordersRef, (snapshot) => {
             const orders = {};
@@ -14,6 +18,10 @@ export const databaseService = {
     },
 
     subscribeToStaff(callback) {
+        if (!auth.currentUser) {
+            console.warn("Attempted to subscribe to staff without authentication.");
+            return () => {};
+        }
         const configRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'config', 'staff');
         return onSnapshot(configRef, (snapshot) => {
             if (snapshot.exists()) {
